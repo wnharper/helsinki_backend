@@ -2,6 +2,7 @@ const { response } = require('express')
 const express = require('express')
 const morgan = require('morgan')
 const app = express()
+const cors = require('cors')
 
 let persons = [
     { 
@@ -26,29 +27,33 @@ let persons = [
     }
 ]
 
-const requestLogger = (request, response, next) => {
-    console.log('Method: ', request.method);
-    console.log('Path: ', request.path);
-    console.log('Body: ', request.body);
-    next()
-}
 
 
-
+// middleware
 app.use(express.json())
-// app.use(requestLogger)
-// app.use(morgan('tiny'))
+app.use(cors())
+app.use(express.static('build'))
+
+
 morgan.token('reqBody', (req, res) => { 
     console.log(req.body);
     return JSON.stringify(req.body) })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :reqBody'))
 
-app.get('/', (request, response) => {
-    response.send('<h1>Hello</h1>')
-})
+// app.get('/', (request, response) => {
+//     response.send('<h1>Hello</h1>')
+// })
 
 app.get('/api/persons', (request, response) => {
     response.json(persons)
+})
+
+app.put('/api/persons/:id', (request, response) => {
+    const id = Number(request.params.id)
+    persons = persons.filter(p => p.id !== id)
+    newPerson = request.body
+    persons = persons.concat(newPerson)
+    response.send(console.log(persons))
 })
 
 app.post('/api/persons', (request, response) => {
@@ -85,8 +90,9 @@ app.get('/api/persons/:id', (request, response) => {
 app.delete('/api/persons/:id', (request, response) => {
     const id = Number(request.params.id)
 
-    persons.filter(p => p.id !== id)
-    response.status(204).end()
+    persons = persons.filter(p => p.id !== id)
+    console.log(persons)
+    response.status(204).send(console.log(persons))
 })
 
 app.get('/info', (request, response) => {
@@ -100,7 +106,7 @@ const unknownEndPoint = (request, response) => {
 
 app.use(unknownEndPoint)
 
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
 console.log(`Server running on port ${PORT}`)
 })
